@@ -21,7 +21,7 @@ export default function SignInScreen() {
 
     checkSpotifyToken();
   }, []);
-
+  
   return (
     <View style={styles.container}>
       <SignInForm />
