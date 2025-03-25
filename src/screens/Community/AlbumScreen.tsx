@@ -12,9 +12,19 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import { useState } from 'react';
-import { db } from './firebase'; 
+import { useNavigation } from '@react-navigation/native';
 
-const AlbumScreen = ({ navigation }) => {
+const AlbumScreen = () => {
+
+  const navigation = useNavigation();
+
+  const goToForum = () => {
+    navigation.navigate('Forum');
+  };
+
+  const goToReview = () => {
+    navigation.navigate('Review');
+  }
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [likeCount, setLikeCount] = useState(30);
@@ -131,12 +141,12 @@ const AlbumScreen = ({ navigation }) => {
           
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity style={styles.actionButton} onPress={goToReview}>
               <Ionicons name="star-outline" size={18} color="#fff" />
               <Text style={styles.actionButtonText}>Rate or Review</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity style={styles.actionButton} onPress={goToForum}>
               <Ionicons name="list-outline" size={18} color="#fff" />
               <Text style={styles.actionButtonText}>Go to Forum</Text>
             </TouchableOpacity>

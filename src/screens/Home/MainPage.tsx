@@ -1,7 +1,16 @@
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from "react-native"
 import { Feather, Ionicons } from "@expo/vector-icons"
-
+import { useNavigation } from "@react-navigation/native"
+import { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList } from '../../navigation/AppNavigator';
 const MusicAppScreen = () => {
+
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Album'>>();
+
+  const goToAlbumScreen = () => {
+    navigation.navigate('Album');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -35,7 +44,7 @@ const MusicAppScreen = () => {
           <Text style={styles.sectionTitle}>Popular Albums This Month</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
             {popularAlbums.map((album, index) => (
-              <TouchableOpacity key={index} style={styles.albumCard}>
+              <TouchableOpacity key={index} style={styles.albumCard} onPress={goToAlbumScreen}>
                 <Image source={{ uri: album.cover }} style={styles.albumCover} />
                 <Text style={styles.albumTitle} numberOfLines={1}>
                   {album.title}

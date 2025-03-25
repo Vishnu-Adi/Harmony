@@ -81,7 +81,7 @@ export default function SignInScreen() {
     <View style={styles.container}>
       <View style={styles.topSection}>
         <ImageBackground
-          source={require('../../../assets/favicon.png')}
+          source={require('../../../assets/favicon.jpeg')}
           style={styles.backgroundImage}
         >
           <View style={styles.overlay} />
