@@ -23,9 +23,9 @@ export default function SignInForm() {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       if (response.data.access_token) {
-        navigation.navigate('ManualEntry');
+        navigation.navigate('Tab');
       }else{
-        navigation.navigate('ManualEntry');
+        navigation.navigate('Tab');
       }
     } catch (error) {
       Alert.alert('Sign In Error', 'Invalid credentials');

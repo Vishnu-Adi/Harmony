@@ -1,11 +1,28 @@
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from "react-native"
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Animated } from "react-native"
 import { Feather, Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
 import { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
-const MusicAppScreen = () => {
+import Sidebar from '../../components/Sidebar';
+import { useState, useRef } from 'react';
+import { Dimensions } from 'react-native';
 
+const { width } = Dimensions.get('window');
+
+export default function MainPage() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Album'>>();
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-width * 0.75)).current;
+
+  const toggleSidebar = () => {
+    const toValue = isSidebarVisible ? -width * 0.75 : 0;
+    Animated.timing(slideAnim, {
+      toValue,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+    setIsSidebarVisible(!isSidebarVisible);
+  };
 
   const goToAlbumScreen = () => {
     navigation.navigate('Album');
@@ -14,10 +31,16 @@ const MusicAppScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      
+      <Sidebar 
+        isVisible={isSidebarVisible}
+        onClose={toggleSidebar}
+        slideAnim={slideAnim}
+      />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={toggleSidebar}>
           <Feather name="menu" size={24} color="#8E8E93" />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -382,4 +405,3 @@ const styles = StyleSheet.create({
   },
 })
 
-export default MusicAppScreen

@@ -57,7 +57,7 @@ export default function SignInScreen() {
       // Important: Use the same navigation logic as SignInForm
       if (response.data.access_token) {
         await AsyncStorage.setItem('user_token', response.data.access_token);
-        navigation.navigate('Home'); // This matches SignInForm's navigation
+        navigation.navigate('Tab'); // Navigate to the Tab Navigator
       } else {
         navigation.navigate('Home'); // This matches SignInForm's fallback
       }
@@ -89,7 +89,7 @@ export default function SignInScreen() {
       </View>
 
       <View style={styles.formContainer}>
-        <Image source={require('../../../assets/icon.png')} style={styles.logo} />
+        <Image source={require('../../../assets/icon.jpg')} style={styles.logo} />
         <Text style={styles.title}>Harmony</Text>
         <Text style={styles.subtitle}>Login</Text>
         <Text style={styles.description}>Please sign in to continue.</Text>
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-20deg' }],
     top: 205,
     left: 0,
-    borderBottomRightRadius: 150,
+    borderBottomRightRadius: 100,
   },
   formContainer: {
     flex: 2,

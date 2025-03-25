@@ -13,8 +13,11 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import type { RootStackParamList } from '../../navigation/AppNavigator';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList } from '../../navigation/AppNavigator';
+import type { TabParamList } from '../../navigation/TabNavigator';
 
 interface Track {
   id: string;
@@ -23,9 +26,16 @@ interface Track {
   album: { images: { url: string }[] };
 }
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+interface HomeScreenProps {
+  toggleSidebar?: () => void;
+}
 
-export default function HomeScreen() {
+type HomeScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Home'>,
+  StackNavigationProp<RootStackParamList>
+>;
+
+export default function HomeScreen({ toggleSidebar }: HomeScreenProps) {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const [topTracks, setTopTracks] = useState<Track[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(true);
@@ -88,11 +98,15 @@ export default function HomeScreen() {
     </View>
   );
 
+  const navigateToDNACode = () => {
+    navigation.navigate('DNACode');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={toggleSidebar}>
             <Ionicons name="menu" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.greeting}>Hello, {userName || 'User'}!</Text>
@@ -103,7 +117,7 @@ export default function HomeScreen() {
         {/* New DNA Code Button */}
         <TouchableOpacity 
           style={styles.dnaButton}
-          onPress={() => navigation.navigate('DNACode')}
+          onPress={navigateToDNACode}
         >
           <Text style={styles.dnaButtonText}>See Your DNA Code</Text>
         </TouchableOpacity>

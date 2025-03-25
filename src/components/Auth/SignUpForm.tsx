@@ -19,7 +19,7 @@ export default function SignUpForm() {
     try {
       const response = await api.post('/auth/signup', { email, password, name, profile_name: profileName });
       if (response.data.token) {
-        navigation.navigate('Home');
+        navigation.navigate('Tab');
       }
     } catch (error) {
         if (axios.isAxiosError(error)) {

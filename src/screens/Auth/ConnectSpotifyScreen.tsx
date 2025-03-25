@@ -15,7 +15,7 @@ const ConnectSpotifyScreen = () => {
   };
 
   const handleManualEntry = () => {
-    navigation.navigate('ManualEntry');
+    navigation.navigate('Tab');
   };
 
   return (

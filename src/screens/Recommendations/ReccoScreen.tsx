@@ -1,298 +1,340 @@
-import React, { useEffect, useState } from 'react';
-import { 
-    SafeAreaView, 
-    View, 
-    Text, 
-    FlatList, 
-    ActivityIndicator, 
-    Image, 
-    TouchableOpacity, 
-    StyleSheet,
-    Alert
+// export default MusicAppScreen
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
 } from 'react-native';
+import Slider from '@react-native-community/slider';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import type { RootStackParamList } from '../../navigation/AppNavigator';
 
+// Simple navigation hook
+const useAnyNavigation = () => useNavigation<any>();
+
+// Define the Artist type – popularity comes directly from Spotify (0-100)
 interface Artist {
-  id: string;
   name: string;
-  images: { url: string }[];
-  genres: string[];
-  followers: { total: number };
+  url: string;
+  image: string;
   popularity: number;
 }
 
-type ReccoScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
-
-// Sample popular artists to use as fallback when user has no listening history
-const FALLBACK_ARTISTS: Partial<Artist>[] = [
-  { 
-    id: '1', 
-    name: 'Taylor Swift', 
-    images: [{ url: 'https://i.scdn.co/image/ab6761610000e5eb5a00969a4698c3132a15fbb0' }],
-    genres: ['pop', 'country pop'],
-    followers: { total: 82000000 },
-    popularity: 95
+// Fallback data in case API fails
+const FALLBACK_ARTISTS: Artist[] = [
+  {
+    name: 'A. R. Rahman',
+    url: 'https://open.spotify.com/artist/0FQkQFzQm5m08YarGmmXcS',
+    image: 'https://via.placeholder.com/100',
+    popularity: 85,
   },
-  { 
-    id: '2', 
-    name: 'The Weeknd', 
-    images: [{ url: 'https://i.scdn.co/image/ab6761610000e5eb48968df3d9b48f8c6a6c794e' }],
-    genres: ['canadian pop', 'r&b'],
-    followers: { total: 60000000 },
-    popularity: 93
+  {
+    name: 'Anirudh Ravichander',
+    url: 'https://open.spotify.com/artist/1B2G6m6ytYYUmY1jSbsBlL',
+    image: 'https://via.placeholder.com/100',
+    popularity: 90,
   },
-  { 
-    id: '3', 
-    name: 'Kendrick Lamar', 
-    images: [{ url: 'https://i.scdn.co/image/ab6761610000e5eb437b9e2a82505b3d93ff1022' }],
-    genres: ['hip hop', 'rap', 'west coast rap'],
-    followers: { total: 40000000 },
-    popularity: 90
+  {
+    name: 'Dua Lipa',
+    url: 'https://open.spotify.com/artist/6M2wZ9GZgrQXHCFfjv46we',
+    image: 'https://via.placeholder.com/100',
+    popularity: 92,
   },
-  { 
-    id: '4', 
-    name: 'Dua Lipa', 
-    images: [{ url: 'https://i.scdn.co/image/ab6761610000e5eb97f5306b2fad517bca8238ec' }],
-    genres: ['dance pop', 'pop'],
-    followers: { total: 36000000 },
-    popularity: 88
+  {
+    name: 'The Weeknd',
+    url: 'https://open.spotify.com/artist/1Xyo4u8uXC1ZmMpatF05PJ',
+    image: 'https://via.placeholder.com/100',
+    popularity: 95,
   },
-  { 
-    id: '5', 
-    name: 'Drake', 
-    images: [{ url: 'https://i.scdn.co/image/ab6761610000e5eb4293385d324db8558179afd9' }],
-    genres: ['canadian hip hop', 'rap'],
-    followers: { total: 70000000 },
-    popularity: 96
-  }
+  {
+    name: 'Taylor Swift',
+    url: 'https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02',
+    image: 'https://via.placeholder.com/100',
+    popularity: 93,
+  },
 ];
 
-export default function ReccoScreen() {
-  const navigation = useNavigation<ReccoScreenNavigationProp>();
-  const [recommendedArtists, setRecommendedArtists] = useState<Artist[]>([]);
+export default function ArtistRecoScreen() {
+  const navigation = useAnyNavigation();
+  const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isUsingFallback, setIsUsingFallback] = useState(false);
 
-  useEffect(() => {
-    const fetchArtistRecommendations = async () => {
-      try {
-        const token = await AsyncStorage.getItem('spotify_token');
-        if (!token) {
-          setError('Spotify not connected. Please authenticate.');
-          setLoading(false);
-          return;
-        }
+  // Filters: language, genre and minimum popularity
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [minPopularity, setMinPopularity] = useState(0);
 
-        try {
-          // First, fetch user's top artists with expanded timeframes for better results
-          const topArtistsResponse = await axios.get(
-            'https://api.spotify.com/v1/me/top/artists?limit=5&time_range=medium_term',
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          
-          const topArtists = topArtistsResponse.data.items;
-          
-          // If no top artists found with medium_term, try long_term
-          if (topArtists.length === 0) {
-            try {
-              const longTermResponse = await axios.get(
-                'https://api.spotify.com/v1/me/top/artists?limit=5&time_range=long_term',
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              
-              if (longTermResponse.data.items.length > 0) {
-                // If we found artists with long_term, use those
-                const relatedArtistsPromises = longTermResponse.data.items.map((artist: any) => 
-                  axios.get(
-                    `https://api.spotify.com/v1/artists/${artist.id}/related-artists`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                  )
-                );
+  // Dropdown visibility state
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [showGenrePicker, setShowGenrePicker] = useState(false);
 
-                const relatedArtistsResponses = await Promise.all(relatedArtistsPromises);
-                processArtistData(relatedArtistsResponses);
-                return;
-              } else {
-                // If still no history, use fallback artists
-                useFallbackArtists();
-                return;
-              }
-            } catch (timeRangeError) {
-              // If error with long_term, use fallback
-              console.error('Error fetching long-term artists:', timeRangeError);
-              useFallbackArtists();
-              return;
-            }
-          }
-
-          // For each top artist, get related artists
-          const relatedArtistsPromises = topArtists.map(artist => 
-            axios.get(
-              `https://api.spotify.com/v1/artists/${artist.id}/related-artists`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
-          );
-
-          const relatedArtistsResponses = await Promise.all(relatedArtistsPromises);
-          processArtistData(relatedArtistsResponses);
-          
-        } catch (apiError: any) {
-          console.error('API Error:', apiError.response?.status, apiError.response?.data);
-          
-          if (apiError.response?.status === 404) {
-            Alert.alert(
-              'Data Not Found',
-              'Either this endpoint is not available or you need to build more Spotify listening history.',
-              [
-                { text: 'Use Sample Data', onPress: () => useFallbackArtists() },
-                { text: 'Reconnect Spotify', onPress: () => navigation.navigate('SpotifyAuth') }
-              ]
-            );
-          } else if (apiError.response?.status === 401) {
-            Alert.alert(
-              'Authentication Error',
-              'Your Spotify session has expired. Please reconnect.',
-              [{ text: 'Reconnect', onPress: () => navigation.navigate('SpotifyAuth') }]
-            );
-          } else {
-            // For other errors, use fallback
-            useFallbackArtists();
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching artist recommendations:', err);
-        useFallbackArtists();
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchArtistRecommendations();
-  }, [navigation]);
-
-  const processArtistData = (relatedArtistsResponses: any[]) => {
-    // Combine all related artists into a single array and remove duplicates
-    let allRelatedArtists: Artist[] = [];
-    relatedArtistsResponses.forEach(response => {
-      allRelatedArtists = [...allRelatedArtists, ...response.data.artists];
-    });
-    
-    // Remove duplicates by ID
-    const uniqueArtists = Array.from(
-      new Map(allRelatedArtists.map(artist => [artist.id, artist])).values()
-    );
-    
-    // Limit to 20 artists max
-    setRecommendedArtists(uniqueArtists.slice(0, 20));
+  // Mapping for language tags – used to append to the query if needed.
+  const languageMapping: { [key: string]: string } = {
+    en: '', // For English, we leave it blank.
+    ta: 'tamil',
+    hi: 'hindustani',
+    te: 'telugu',
   };
 
-  const useFallbackArtists = () => {
-    setIsUsingFallback(true);
-    setRecommendedArtists(FALLBACK_ARTISTS as Artist[]);
+  const languages = [
+    { label: 'English', value: 'en' },
+    { label: 'Tamil', value: 'ta' },
+    { label: 'Hindi', value: 'hi' },
+    { label: 'Telugu', value: 'te' },
+  ];
+
+  // Extended list of genres; feel free to add more genres as needed.
+  const genres = [
+    { label: 'All Genres', value: '' },
+    { label: 'Rock', value: 'rock' },
+    { label: 'Pop', value: 'pop' },
+    { label: 'Soundtrack', value: 'soundtrack' },
+    { label: 'Hip-Hop/Rap', value: 'hip-hop' },
+    { label: 'R&B/Soul', value: 'r&b' },
+    { label: 'Electronic', value: 'electronic' },
+    { label: 'Jazz', value: 'jazz' },
+    { label: 'Classical', value: 'classical' },
+    { label: 'Country', value: 'country' },
+    { label: 'classic kollywood', value: 'classic kollywood' },
+    { label: 'Indie', value: 'indie' },
+    { label: 'Metal', value: 'metal' },
+    { label: 'Reggae', value: 'reggae' },
+    { label: 'Blues', value: 'blues' },
+    { label: 'Folk', value: 'folk' },
+  
+  ];
+
+  // When filters change, fetch recommendations.
+  useEffect(() => {
+    fetchArtists();
+  }, [selectedLanguage, selectedGenre, minPopularity]);
+
+  // Build query for Spotify API using genre and language mapping.
+  const buildQuery = (): string => {
+    const baseQuery = selectedGenre !== '' ? selectedGenre : 'pop';
+    const langTag = languageMapping[selectedLanguage];
+    return langTag ? `${baseQuery} ${langTag}` : baseQuery;
+  };
+
+  // Fetch artists from Spotify API using the search endpoint.
+  // Then filter the results based on the minPopularity slider value.
+  const fetchArtists = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const spotifyToken = await AsyncStorage.getItem('spotify_token');
+      if (!spotifyToken) {
+        setError('Spotify token not found.');
+        setArtists(FALLBACK_ARTISTS);
+        setLoading(false);
+        return;
+      }
+
+      const query = buildQuery();
+      // Use the Spotify search endpoint with the genre filter operator.
+      const searchQuery = `genre:"${query}"`;
+      const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+        searchQuery
+      )}&type=artist&limit=20`;
+
+      console.log('Fetching from Spotify URL:', url);
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${spotifyToken}` },
+      });
+
+      if (response.data.artists && response.data.artists.items) {
+        // Filter artists by the minPopularity slider value.
+        const fetchedArtists: Artist[] = response.data.artists.items
+          .map((item: any) => ({
+            name: item.name,
+            url: item.external_urls.spotify,
+            image:
+              item.images && item.images.length > 0
+                ? item.images[0].url
+                : 'https://via.placeholder.com/100',
+            popularity: item.popularity,
+          }))
+          .filter((artist: Artist) => artist.popularity >= minPopularity);
+        setArtists(fetchedArtists);
+      } else {
+        setArtists(FALLBACK_ARTISTS);
+      }
+    } catch (err) {
+      console.error('Error fetching artists from Spotify:', err);
+      setError('Failed to fetch artists. Showing fallback data.');
+      setArtists(FALLBACK_ARTISTS);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderArtistItem = ({ item }: { item: Artist }) => (
-    <TouchableOpacity style={styles.artistCard}>
-      <Image 
-        source={{ uri: item.images[0]?.url || 'https://via.placeholder.com/80' }} 
-        style={styles.artistImage} 
-      />
+    <TouchableOpacity
+      style={styles.artistCard}
+      onPress={() => console.log(`Selected artist: ${item.name}`)}
+    >
+      <Image source={{ uri: item.image }} style={styles.artistImage} />
       <View style={styles.artistInfo}>
-        <Text style={styles.artistName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.artistGenres} numberOfLines={1}>
-          {(item.genres || []).slice(0, 3).join(', ')}
+        <Text style={styles.artistName} numberOfLines={1}>
+          {item.name}
         </Text>
-        <View style={styles.statsContainer}>
-          <Text style={styles.followersText}>
-            {formatFollowers(item.followers?.total || 0)} followers
-          </Text>
-          <View style={styles.popularityContainer}>
-            <Text style={styles.popularityText}>Popularity: </Text>
-            <View style={styles.popularityMeter}>
-              <View style={[styles.popularityFill, { width: `${item.popularity || 0}%` }]} />
-            </View>
-          </View>
-        </View>
+        <Text style={styles.artistGenre} numberOfLines={1}>
+          {item.url}
+        </Text>
+        <Text style={styles.popularityText}>Popularity: {item.popularity}</Text>
       </View>
       <Ionicons name="ellipsis-vertical" size={20} color="#fff" style={styles.moreIcon} />
     </TouchableOpacity>
   );
 
-  const formatFollowers = (number: number) => {
-    if (number >= 1000000) {
-      return (number / 1000000).toFixed(1) + 'M';
-    } else if (number >= 1000) {
-      return (number / 1000).toFixed(1) + 'K';
-    }
-    return number.toString();
+  const getLanguageLabel = () => {
+    const lang = languages.find((l) => l.value === selectedLanguage);
+    return lang ? lang.label : 'English';
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1DB954" />
-          <Text style={styles.loadingText}>Finding artists you'll love...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error && !isUsingFallback) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.reconnectButton}
-            onPress={() => navigation.navigate('SpotifyAuth')}
-          >
-            <Text style={styles.reconnectText}>Reconnect with Spotify</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.reconnectButton, {backgroundColor: '#333'}]}
-            onPress={() => useFallbackArtists()}
-          >
-            <Text style={styles.reconnectText}>Use Sample Data</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const getGenreLabel = () => {
+    const genre = genres.find((g) => g.value === selectedGenre);
+    return genre ? genre.label : 'All Genres';
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.headerTitle}>Artists You Might Like</Text>
-        {isUsingFallback && (
-          <View style={styles.fallbackBanner}>
-            <Text style={styles.fallbackText}>
-              Using sample recommendations. Connect Spotify for personalized suggestions.
-            </Text>
-            <TouchableOpacity 
-              style={styles.smallButton}
-              onPress={() => navigation.navigate('SpotifyAuth')}
+        <Text style={styles.headerTitle}>Artist Recommendations</Text>
+        <View style={styles.filterRow}>
+          {/* Language Filter */}
+          <View style={styles.pickerWrapper}>
+            <Text style={styles.pickerLabel}>Language:</Text>
+            <TouchableOpacity
+              style={styles.customPickerButton}
+              onPress={() => setShowLanguagePicker(!showLanguagePicker)}
             >
-              <Text style={styles.smallButtonText}>Connect</Text>
+              <Text style={styles.customPickerButtonText}>{getLanguageLabel()}</Text>
+              <MaterialIcons name="arrow-drop-down" size={24} color="#fff" />
             </TouchableOpacity>
+            {showLanguagePicker && (
+              <View style={styles.pickerDropdown}>
+                {languages.map((lang) => (
+                  <TouchableOpacity
+                    key={lang.value}
+                    style={[
+                      styles.pickerOption,
+                      selectedLanguage === lang.value && styles.pickerOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedLanguage(lang.value);
+                      setShowLanguagePicker(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        selectedLanguage === lang.value && styles.pickerOptionTextSelected,
+                      ]}
+                    >
+                      {lang.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
+          {/* Genre Filter */}
+          <View style={styles.pickerWrapper}>
+            <Text style={styles.pickerLabel}>Genre:</Text>
+            <TouchableOpacity
+              style={styles.customPickerButton}
+              onPress={() => setShowGenrePicker(!showGenrePicker)}
+            >
+              <Text style={styles.customPickerButtonText}>{getGenreLabel()}</Text>
+              <MaterialIcons name="arrow-drop-down" size={24} color="#fff" />
+            </TouchableOpacity>
+            {showGenrePicker && (
+              <View style={styles.pickerDropdown}>
+                {genres.map((genre) => (
+                  <TouchableOpacity
+                    key={genre.value}
+                    style={[
+                      styles.pickerOption,
+                      selectedGenre === genre.value && styles.pickerOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedGenre(genre.value);
+                      setShowGenrePicker(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        selectedGenre === genre.value && styles.pickerOptionTextSelected,
+                      ]}
+                    >
+                      {genre.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+        {/* Popularity Slider */}
+        <View style={styles.sliderContainer}>
+          <Text style={styles.sliderLabel}>
+            Minimum Popularity: {minPopularity}
+          </Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={100}
+            step={1}
+            value={minPopularity}
+            minimumTrackTintColor="#1DB954"
+            maximumTrackTintColor="#fff"
+            thumbTintColor="#1DB954"
+            onValueChange={(value) => setMinPopularity(value)}
+          />
+        </View>
+        <TouchableOpacity
+          style={styles.applyFilterButton}
+          onPress={() => {
+            fetchArtists();
+            setShowLanguagePicker(false);
+            setShowGenrePicker(false);
+          }}
+        >
+          <Text style={styles.applyFilterText}>Apply Filters</Text>
+        </TouchableOpacity>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#1DB954" />
+            <Text style={styles.loadingText}>Loading artists...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={artists}
+            renderItem={renderArtistItem}
+            keyExtractor={(item) => item.name}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No artists found.</Text>
+              </View>
+            }
+          />
         )}
-        {!isUsingFallback && (
-          <Text style={styles.subHeader}>Based on your listening history</Text>
-        )}
-        <FlatList
-          data={recommendedArtists}
-          renderItem={renderArtistItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
       </View>
     </SafeAreaView>
   );
@@ -308,75 +350,128 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     color: '#FFD700',
     fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  subHeader: {
-    fontSize: 14,
-    color: '#CBD5E1',
     marginBottom: 20,
   },
-  fallbackBanner: {
-    backgroundColor: 'rgba(29, 185, 84, 0.2)',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 20,
+  filterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 15,
   },
-  fallbackText: {
-    color: '#CBD5E1',
-    fontSize: 12,
+  pickerWrapper: {
     flex: 1,
-    marginRight: 10,
+    marginHorizontal: 5,
+    zIndex: 2,
   },
-  smallButton: {
-    backgroundColor: '#1DB954',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  smallButtonText: {
-    color: '#FFF',
-    fontSize: 12,
+  pickerLabel: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 5,
     fontWeight: 'bold',
+  },
+  customPickerButton: {
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    height: 45,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+  },
+  customPickerButtonText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  pickerDropdown: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    backgroundColor: '#475569',
+    borderRadius: 12,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  pickerOption: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  pickerOptionSelected: {
+    backgroundColor: 'rgba(29, 185, 84, 0.3)',
+  },
+  pickerOptionText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  pickerOptionTextSelected: {
+    fontWeight: 'bold',
+    color: '#1DB954',
+  },
+  sliderContainer: {
+    marginBottom: 20,
+  },
+  sliderLabel: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 5,
+    fontWeight: 'bold',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  applyFilterButton: {
+    backgroundColor: '#1DB954',
+    borderRadius: 25,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 20,
+    zIndex: 1,
+  },
+  applyFilterText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
+    marginTop: 15,
     color: '#1DB954',
+    fontSize: 16,
   },
-  errorText: {
-    fontSize: 18,
-    color: 'red',
-    textAlign: 'center',
+  errorContainer: {
+    padding: 20,
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    borderRadius: 8,
     marginBottom: 20,
   },
-  reconnectButton: {
-    backgroundColor: '#1DB954',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    marginTop: 15,
-    alignItems: 'center',
-    width: '80%',
-  },
-  reconnectText: {
-    color: 'white',
-    fontWeight: 'bold',
+  errorText: {
+    color: '#ff6b6b',
     fontSize: 16,
+    textAlign: 'center',
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: 30,
+  },
+  emptyContainer: {
+    padding: 30,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#8E8E93',
+    fontSize: 16,
+    textAlign: 'center',
   },
   artistCard: {
     flexDirection: 'row',
@@ -385,57 +480,40 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 12,
     marginBottom: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
   },
   artistImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
     marginRight: 15,
+    backgroundColor: '#1E293B',
   },
   artistInfo: {
     flex: 1,
   },
   artistName: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#fff',
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  artistGenres: {
-    fontSize: 13,
+  artistGenre: {
+    fontSize: 14,
     color: '#CBD5E1',
-    marginBottom: 8,
     fontStyle: 'italic',
-  },
-  statsContainer: {
-    flexDirection: 'column',
-  },
-  followersText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginBottom: 4,
-  },
-  popularityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   popularityText: {
     fontSize: 12,
-    color: '#9CA3AF',
-  },
-  popularityMeter: {
-    height: 4,
-    width: 60,
-    backgroundColor: '#475569',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginLeft: 4,
-  },
-  popularityFill: {
-    height: '100%',
-    backgroundColor: '#1DB954',
+    color: '#1DB954',
+    marginTop: 4,
   },
   moreIcon: {
     marginLeft: 10,
   },
 });
+

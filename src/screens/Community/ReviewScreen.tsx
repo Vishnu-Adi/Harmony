@@ -12,9 +12,11 @@ import {
   Animated,
   Platform,
   Pressable,
+  Alert,
 } from 'react-native';
 import { Ionicons, FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import axios from 'axios'; // Import axios for API calls
 
 const ReviewScreen = ({ navigation, route }) => {
   // State for form values
@@ -87,10 +89,18 @@ const ReviewScreen = ({ navigation, route }) => {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // Navigate to forum screen after animation
-      setTimeout(() => {
-        navigation.navigate('Forum');
-      }, 200);
+      // Create the new review object
+      const newReview = {
+        _id: Date.now().toString(), // Generate a unique ID for the review
+        user: 'John Doe', // Replace with dynamic user data if available
+        review,
+        rating,
+        isFavorite,
+        date: formatDate(date),
+      };
+
+      // Pass the new review to ForumScreen
+      navigation.navigate('Forum', { newReview });
     });
   };
   

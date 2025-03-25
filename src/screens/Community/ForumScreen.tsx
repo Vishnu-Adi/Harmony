@@ -1,5 +1,5 @@
 //Forum Screen
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,76 +9,62 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const ForumScreen = ({ navigation }) => {
-  // Sample review data
-  const reviews = [
+const ForumScreen = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+
+  // Initialize reviews with hardcoded data
+  const [reviews, setReviews] = useState([
     {
-      id: 1,
-      name: 'David',
-      rating: 4.5,
-      reviewCount: 5,
-      text: 'It was just over five years ago that The Weeknd\'s After Hours redefined mainstream R&B, hinting at a future where synth-driven melancholia could dominate the charts without compromise. With its cinematic production, deep 80s-inspired beats, and Abel Tesfaye\'s haunting falsetto, After Hours is a cinematic odyssey of heartbreak and modern hedonism. The album creates a sonic universe that often feels more like a neon-lit fever dream than a conventional pop album. With instant classics like "Blinding Lights" and "Nothing Compares," The Weeknd fully realizes his vision with staggering force.'
+      _id: '1',
+      user: 'Alice',
+      review: 'This album is a masterpiece! The Weeknd never disappoints.',
+      rating: 5,
+      isFavorite: true,
+      date: 'March 25, 2025',
     },
     {
-      id: 2,
-      name: 'David',
-      rating: 4.5,
-      reviewCount: 4,
-      text: 'Absolutely amazing—After Hours feels like an immersive, cinematic experience rather than just an album. It is a masterpiece!'
-    },
-    {
-      id: 3,
-      name: 'David',
+      _id: '2',
+      user: 'Bob',
+      review: 'Loved the beats and the lyrics. A must-listen for everyone!',
       rating: 4,
-      reviewCount: 5,
-      text: 'The Weeknd excels in blends nostalgia with modern production, making it a genuine standout in his discography. What a time to live!'
+      isFavorite: false,
+      date: 'March 24, 2025',
     },
     {
-      id: 4,
-      name: 'Mason',
-      rating: 4.3,
-      reviewCount: 10,
-      text: 'Believe the hype.\n\nAfter Hours is a dark, synth-drenched odyssey, which immediately sets it apart from The Weeknd\'s previous work and the aspect that I loved the most. The heartbeat and excess ooze out of each track through its immaculate production and are injected into your veins through Tesfaye\'s haunting falsetto and pulsating 80s-inspired beats.'
+      _id: '3',
+      user: 'Charlie',
+      review: 'The production quality is top-notch. Highly recommended!',
+      rating: 5,
+      isFavorite: true,
+      date: 'March 23, 2025',
     },
-    {
-      id: 5,
-      name: 'David',
-      rating: 4.5,
-      reviewCount: 5,
-      text: 'Couldn\'t have said it better—After Hours is an intoxicating blend of nostalgia and new emotion.'
-    },
-    {
-      id: 6,
-      name: 'David',
-      rating: 4,
-      reviewCount: 5,
-      text: 'Every track pulls you deeper into its neon-lit world, making it one of The Weeknd\'s most immersive projects yet.'
-    },
-    {
-      id: 7,
-      name: 'David',
-      rating: 4.5,
-      reviewCount: 5,
-      text: 'Absolutely—After Hours is a haunting yet mesmerizing journey through heartbreak and excess. The seamless fusion of moody synths and Tesfaye\'s falsetto makes it an unforgettable experience from start to finish.'
-    },
-    {
-      id: 8,
-      name: 'David',
-      rating: 4,
-      reviewCount: 5,
-      text: 'Spot on—After Hours feels like a beautifully crafted descent into heartbreak and indulgence. The cinematic production and hypnotic melodies make it impossible to escape its grip.'
-    },
-  ];
+  ]);
+
+  // Handle new review passed from ReviewScreen
+  useEffect(() => {
+    if (route.params?.newReview) {
+      // Add the new review to the top of the reviews list
+      setReviews((prevReviews) => [route.params.newReview, ...prevReviews]);
+    }
+  }, [route.params?.newReview]);
+
+  const goToReview = () => {
+    navigation.navigate('Review');
+  };
 
   // Render stars based on rating
   const renderStars = (rating, size = 14) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
-    
+
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
@@ -94,19 +80,19 @@ const ForumScreen = ({ navigation }) => {
         );
       }
     }
-    
+
     return stars;
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Forum Page</Text>
       </View>
-      
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Album Header */}
         <View style={styles.albumHeader}>
@@ -116,7 +102,7 @@ const ForumScreen = ({ navigation }) => {
           >
             <Ionicons name="arrow-back" size={24} color="#222" />
           </TouchableOpacity>
-          
+
           <View style={styles.albumTitleContainer}>
             <Text style={styles.albumTitle}>After Hours <Text style={styles.albumYear}>2020</Text></Text>
             <View style={styles.viewsContainer}>
@@ -125,61 +111,52 @@ const ForumScreen = ({ navigation }) => {
             </View>
           </View>
         </View>
-        
+
         {/* Album Info Section */}
         <View style={styles.albumInfoSection}>
           <Image 
             source={{ uri: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9yQBX9pKJvyzF2V7aFQjhYGv2AGKwW.png' }} 
             style={styles.albumCover}
           />
-          
+
           <View style={styles.albumDetails}>
             <Text style={styles.artistName}>The Weeknd</Text>
             <Text style={styles.albumMeta}>65 mins • 17 songs</Text>
-            
+
             <View style={styles.albumDescription}>
               <Text style={styles.descriptionTitle}>UNMASK THE TRUTH</Text>
               <Text style={styles.descriptionText}>
                 After Hours is The Weeknd's fourth studio album. It was released on March 20, 2020, to critical acclaim, with some calling it his best work to date. The album contains themes surrounding loneliness, heartbreak, withdrawal, infidelity, and recklessness.
               </Text>
             </View>
-            
-            <TouchableOpacity style={styles.rateButton}>
+
+            <TouchableOpacity style={styles.rateButton} onPress={goToReview}>
               <Ionicons name="star-outline" size={18} color="#fff" />
               <Text style={styles.rateButtonText}>Rate or Review</Text>
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {/* Reviews Section */}
         <View style={styles.reviewsSection}>
           {reviews.map((review) => (
-            <View key={review.id} style={styles.reviewItem}>
+            <View key={review._id} style={styles.reviewItem}>
               <View style={styles.reviewHeader}>
                 <Image 
-                  source={{ uri: `https://picsum.photos/200/200?random=${review.id}` }} 
+                  source={{ uri: `https://picsum.photos/200/200?random=${review._id}` }} 
                   style={styles.reviewerImage}
                 />
                 <View style={styles.reviewerInfo}>
-                  <View style={styles.reviewerNameContainer}>
-                    <Text style={styles.reviewerName}>{review.name}</Text>
-                    <View style={styles.ratingContainer}>
-                      {renderStars(review.rating)}
-                      <Text style={styles.reviewCount}>({review.reviewCount})</Text>
-                    </View>
-                  </View>
-                  <View style={styles.reviewByContainer}>
-                    <Text style={styles.reviewByText}>Review by {review.name}</Text>
-                  </View>
+                  <Text style={styles.reviewerName}>{review.user}</Text>
+                  <View style={styles.ratingContainer}>{renderStars(review.rating)}</View>
                 </View>
               </View>
-              <Text style={styles.reviewText} numberOfLines={review.id === 1 || review.id === 4 ? 6 : 2}>
-                {review.text}
-              </Text>
+              <Text style={styles.reviewText}>{review.review}</Text>
+              <Text style={styles.reviewDate}>{review.date}</Text>
             </View>
           ))}
         </View>
-        
+
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -352,6 +329,11 @@ const styles = StyleSheet.create({
     color: '#CCCCCC',
     fontSize: 16,
     lineHeight: 24,
+  },
+  reviewDate: {
+    color: '#9A9A9A',
+    fontSize: 14,
+    marginTop: 4,
   },
   bottomSpacing: {
     height: 40,
