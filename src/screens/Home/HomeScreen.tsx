@@ -1,17 +1,20 @@
-// File: src/screens/Home/HomeScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
+  SafeAreaView,
   View,
   Text,
   FlatList,
   ActivityIndicator,
-  StyleSheet,
-  Alert,
   Image,
-  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { RootStackParamList } from '../../navigation/AppNavigator';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 interface Track {
   id: string;
@@ -20,292 +23,181 @@ interface Track {
   album: { images: { url: string }[] };
 }
 
-interface Playlist {
-  id: string;
-  name: string;
-  description: string | null;
-  images: { url: string }[];
-}
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 export default function HomeScreen() {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const [topTracks, setTopTracks] = useState<Track[]>([]);
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(true);
-  const [loadingPlaylists, setLoadingPlaylists] = useState(true);
   const [userName, setUserName] = useState<string | null>(null);
-    const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
+  const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
 
   useEffect(() => {
-      const fetchData = async () => {
-      const spotifyToken = await AsyncStorage.getItem('spotify_token');
-      const manualTracksString = await AsyncStorage.getItem('manual_tracks');
-      setIsSpotifyConnected(!!spotifyToken);
-            if (!spotifyToken && !manualTracksString) {
-              setLoadingTracks(false);
-              setLoadingPlaylists(false);
-              return; // Exit if no Spotify token and no manual tracks
-            }
-
-    // Fetch User Profile
-        if (spotifyToken) {
-          try {
-            const userResponse = await axios.get('https://api.spotify.com/v1/me', {
-              headers: { Authorization: `Bearer ${spotifyToken}` },
-            });
-            setUserName(userResponse.data.display_name);
-          } catch (userError) {
-            console.error('Error fetching user profile:', userError);
-             Alert.alert("Error", "Failed to fetch user profile. Please check your internet connection.");
-          }
+    const fetchData = async () => {
+      try {
+        const spotifyToken = await AsyncStorage.getItem('spotify_token');
+        if (!spotifyToken) {
+          setIsSpotifyConnected(false);
+          setLoadingTracks(false);
+          return;
         }
-
-       if (spotifyToken) {
-        // Fetch Top Tracks (Spotify)
+        setIsSpotifyConnected(true);
+        
+        // Verify token validity and fetch user info and top tracks
         try {
+          const userResponse = await axios.get('https://api.spotify.com/v1/me', {
+            headers: { Authorization: `Bearer ${spotifyToken}` },
+          });
+          setUserName(userResponse.data.display_name);
+          
           const tracksResponse = await axios.get(
-            'https://api.spotify.com/v1/me/top/tracks?limit=5', // Change back to 50
+            'https://api.spotify.com/v1/me/top/tracks?limit=50',
             { headers: { Authorization: `Bearer ${spotifyToken}` } }
           );
-
-          if (tracksResponse.data.items && Array.isArray(tracksResponse.data.items)) {
-            setTopTracks(tracksResponse.data.items);
+          setTopTracks(tracksResponse.data.items);
+        } catch (error: any) {
+          console.error('API Error status:', error.response?.status);
+          if (error.response?.status === 401) {
+            console.log('Token expired, need to re-authenticate');
+            setIsSpotifyConnected(false);
           } else {
-            console.warn('Unexpected tracks response format:', tracksResponse.data);
-            Alert.alert('Error', 'Failed to load top tracks.');
-            setTopTracks([]);
+            console.error('Error fetching data:', error);
           }
-        } catch (tracksError) {
-          console.error('Error fetching top tracks:', tracksError);
-          Alert.alert('Error', 'Failed to fetch top tracks.');
-        } finally {
-          setLoadingTracks(false);
         }
-       }
-       else if (manualTracksString)
-       {
-            // Use manual tracks if no Spotify connection
-            try {
-                const manualTracks: string[] = JSON.parse(manualTracksString);
-                //Since manual tracks are not from Spotify, we can't directly use them.
-                //We need to convert them to a similar format as the `Track` interface.
-                const transformedTracks: Track[] = manualTracks.map((trackName, index) => ({
-                id: `manual-${index}`, // Create a unique ID
-                name: trackName,
-                artists: [{ name: 'Unknown Artist' }], // Placeholder artist
-                album: { images: [] }, // Placeholder album
-                }));
-
-                setTopTracks(transformedTracks);
-            } catch (parseError)
-            {
-                console.error('Error parsing manual tracks:', parseError);
-                Alert.alert('Error', 'Failed to load your manually entered tracks.');
-            } finally {
-                setLoadingTracks(false); // Ensure loading is set to false
-            }
-
-       }
-
-
-      // Fetch Playlists (Only if Spotify is connected)
-        if (spotifyToken) {
-        try {
-            const playlistsResponse = await axios.get(
-            'https://api.spotify.com/v1/me/playlists?limit=5',
-            { headers: { Authorization: `Bearer ${spotifyToken}` } }
-            );
-
-            if (
-            playlistsResponse.data.items &&
-            Array.isArray(playlistsResponse.data.items)
-            ) {
-            setPlaylists(playlistsResponse.data.items);
-            } else {
-            console.warn('Unexpected playlists response format:', playlistsResponse.data);
-            Alert.alert('Error', 'Failed to load playlists.');
-            setPlaylists([]);
-            }
-        } catch (playlistsError) {
-            console.error('Error fetching playlists:', playlistsError);
-            Alert.alert('Error', 'Failed to fetch playlists.');
-        } finally {
-            setLoadingPlaylists(false);
-        }
-        } else {
-          setLoadingPlaylists(false); // If no Spotify, don't load playlists.
-        }
+      } catch (networkError) {
+        console.error('Network error:', networkError);
+      } finally {
+        setLoadingTracks(false);
+      }
     };
-
+    
     fetchData();
   }, []);
 
   const renderTrackItem = ({ item }: { item: Track }) => (
-     <View style={styles.trackItem}>
-      {/* Display a placeholder if no album image exists */}
-      {item.album.images.length > 0 ? (
-        <Image source={{ uri: item.album.images[0].url }} style={styles.trackImage} />
-      ) : (
-        <View style={[styles.trackImage, styles.placeholderImage]} /> // Use a placeholder style
-      )}
+    <View style={styles.trackItem}>
+      <Image source={{ uri: item.album.images[0]?.url }} style={styles.trackImage} />
       <View style={styles.trackInfo}>
         <Text style={styles.trackName}>{item.name}</Text>
         <Text style={styles.trackArtist}>
-          by {item.artists.map((artist) => artist.name).join(', ')}
+          {item.artists.map(artist => artist.name).join(', ')}
         </Text>
       </View>
-    </View>
-  );
-
-  const renderPlaylistItem = ({ item }: { item: Playlist }) => (
-    <View style={styles.playlistItem}>
-      {/* Display a placeholder if no playlist image exists */}
-      {item.images.length > 0 ? (
-        <Image source={{ uri: item.images[0].url }} style={styles.playlistImage} />
-      ) : (
-        <View style={[styles.playlistImage, styles.placeholderImage]} /> // Use a placeholder style
-      )}
-      <View style={styles.playlistInfo}>
-        <Text style={styles.playlistName}>{item.name}</Text>
-        <Text style={styles.playlistDescription}>
-          {item.description || 'No description'}
-        </Text>
-      </View>
+      <Text style={styles.trackDuration}>5:33</Text>
+      <Ionicons name="ellipsis-vertical" size={20} color="#fff" style={styles.moreIcon} />
     </View>
   );
 
   return (
-     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Welcome, {userName || 'User'}!</Text>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          {isSpotifyConnected ? 'Your Top 5 Songs' : 'Your Top Songs'}
-        </Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity>
+            <Ionicons name="menu" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.greeting}>Hello, {userName || 'User'}!</Text>
+          <TouchableOpacity>
+            <Image source={{ uri: 'https://via.placeholder.com/40' }} style={styles.profileImage} />
+          </TouchableOpacity>
+        </View>
+        {/* New DNA Code Button */}
+        <TouchableOpacity 
+          style={styles.dnaButton}
+          onPress={() => navigation.navigate('DNACode')}
+        >
+          <Text style={styles.dnaButtonText}>See Your DNA Code</Text>
+        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Most Listened Tracks</Text>
         {loadingTracks ? (
-          <ActivityIndicator size="small" color="#2dd4bf" />
-        ) : topTracks.length > 0 ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
           <FlatList
             data={topTracks}
             renderItem={renderTrackItem}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
           />
-        ) : (
-          <Text style={styles.emptyText}>No top tracks found.</Text>
         )}
       </View>
-
-      {isSpotifyConnected && (  // Conditionally render playlists
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Playlists</Text>
-          {loadingPlaylists ? (
-            <ActivityIndicator size="small" color="#2dd4bf" />
-          ) : playlists.length > 0 ? (
-            <FlatList
-              data={playlists}
-              renderItem={renderPlaylistItem}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalList}
-            />
-          ) : (
-            <Text style={styles.emptyText}>No playlists found.</Text>
-          )}
-        </View>
-      )}
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#1E293B',
+  },
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#e0f2fe',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
-    color: '#0369a1',
   },
-  section: {
-    marginBottom: 30,
+  greeting: {
+    fontSize: 18,
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  dnaButton: {
+    backgroundColor: '#1DB954',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  dnaButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#FFD700',
     marginBottom: 10,
-    color: '#0369a1',
   },
   trackItem: {
-    width: 150,
-    marginRight: 15,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#334155',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   trackImage: {
-    width: 150,
-    height: 150,
+    width: 50,
+    height: 50,
+    borderRadius: 5,
+    marginRight: 10,
   },
   trackInfo: {
-    padding: 10,
+    flex: 1,
   },
   trackName: {
     fontSize: 14,
+    color: '#fff',
     fontWeight: 'bold',
-    color: '#0369a1',
   },
   trackArtist: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#CBD5E1',
   },
-  playlistItem: {
-    width: 150,
-    marginRight: 15,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  playlistImage: {
-    width: 150,
-    height: 150,
-  },
-  playlistInfo: {
-    padding: 10,
-  },
-  playlistName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#0369a1',
-  },
-  playlistDescription: {
+  trackDuration: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#fff',
+    marginRight: 10,
   },
-  emptyText: {
-    color: '#6b7280',
-  },
-  horizontalList: {
-    paddingVertical: 10,
-  },
-    placeholderImage: {
-    backgroundColor: '#ddd', // Light gray background
-    justifyContent: 'center',
-    alignItems: 'center',
+  moreIcon: {
+    marginLeft: 'auto',
   },
 });

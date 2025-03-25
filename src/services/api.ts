@@ -3,7 +3,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = axios.create({
-  baseURL: 'http://172.16.149.139:8000', //  LAN IP, change as needed
+  baseURL: 'http://172.16.145.145:8081', //  LAN IP, change as needed
 });
 
 // Request interceptor to add the auth token to every request (example)

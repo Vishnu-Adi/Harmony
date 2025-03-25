@@ -8,19 +8,12 @@ import bcrypt
 from datetime import timedelta, datetime
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-import secrets
-import uuid
-from fastapi import HTTPException
-from datetime import timedelta, datetime
-from jose import jwt
-from dotenv import load_dotenv
-import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Security settings
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # You can configure this
-SECRET_KEY = os.getenv("SECRET_KEY", "YOUR_SECRET_KEY")
+ACCESS_TOKEN_EXPIRE_MINUTES = 30  
+SECRET_KEY = "YOUR_SECRET_KEY"  
 ALGORITHM = "HS256"
 
 # Password hashing context
@@ -80,46 +73,3 @@ async def signin(form_data: OAuth2PasswordRequestForm = Depends()):
     access_token_data = {"sub": str(user["id"])}
     access_token = create_access_token(access_token_data)
     return {"access_token": access_token, "token_type": "bearer"}
-
-
-@router.post("/spotify_register")
-async def spotify_register(payload: dict):
-    token = payload.get("token")
-    if not token:
-        raise HTTPException(status_code=400, detail="Spotify token is required")
-
-    # Simulate fetching user details from Spotify.
-    # In production, replace this code with a call to Spotify's API
-    spotify_user = {
-        "name": "Spotify User",      # Replace with actual name from Spotify API
-        "spotify_id": "abc123"         # Replace with actual Spotify user ID
-    }
-
-    # Generate a basic DNA code using secrets (placeholder for your AI/ML code)
-    dna_code = secrets.token_hex(8)  # 16-character hex string
-
-    # Create a new user or update existing one with the generated DNA code.
-    # For demonstration, we're using a simplified logic. In production, use your DB.
-    from database import db  # Ensure you have this import based on your current setup
-
-    existing_user = await db.users.find_one({"spotify_id": spotify_user["spotify_id"]})
-    if not existing_user:
-        new_user = {
-            "id": str(uuid.uuid4()),
-            "name": spotify_user["name"],
-            "spotify_id": spotify_user["spotify_id"],
-            "dna": dna_code,
-        }
-        await db.users.insert_one(new_user)
-        user = new_user
-    else:
-        await db.users.update_one(
-            {"_id": existing_user["_id"]},
-            {"$set": {"dna": dna_code}}
-        )
-        existing_user["dna"] = dna_code
-        user = existing_user
-
-    # Generate a JWT token for the authenticated user.
-    access_token = create_access_token({"sub": user["id"]})
-    return {"user_token": access_token}
