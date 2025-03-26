@@ -1,4 +1,3 @@
-//Review Screen
 import React, { useState, useRef } from 'react';
 import {
   View,
@@ -11,56 +10,51 @@ import {
   TextInput,
   Animated,
   Platform,
-  Pressable,
-  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons, FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import axios from 'axios'; // Import axios for API calls
+import { LinearGradient } from 'expo-linear-gradient';
 
-const ReviewScreen = ({ navigation, route }) => {
-  // State for form values
-  const [rating, setRating] = useState(5);
+const ALBUM_COVER = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-DW226otLXNn5BunBBolecrbwShg72C.png';
+
+export default function ReviewScreen({ navigation }) {
+  // State management
+  const [rating, setRating] = useState(4.5);
   const [review, setReview] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
-  const [date, setDate] = useState(new Date('2022-03-06'));
+  const [date, setDate] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   
-  // Animation values
+  // Animation for publish button
   const publishScale = useRef(new Animated.Value(1)).current;
   
-  // Handle star rating
+  // Handle star rating selection
   const handleRating = (selectedRating) => {
     setRating(selectedRating);
   };
   
-  // Handle half star rating with touch position
+  // Star precision handling for half stars
   const handleStarPress = (starIndex, event) => {
     const { locationX, width } = event.nativeEvent;
     const position = locationX / width;
     
     if (position <= 0.5) {
-      // User pressed on the left half of the star
       setRating(starIndex + 0.5);
     } else {
-      // User pressed on the right half of the star
       setRating(starIndex + 1);
     }
   };
   
-  // Toggle favorite
+  // Toggle favorite state
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
   };
   
   // Date picker handlers
-  const showDatePicker = () => {
-    setDatePickerVisible(true);
-  };
-  
-  const hideDatePicker = () => {
-    setDatePickerVisible(false);
-  };
+  const showDatePicker = () => setDatePickerVisible(true);
+  const hideDatePicker = () => setDatePickerVisible(false);
   
   const handleConfirmDate = (selectedDate) => {
     setDate(selectedDate);
@@ -69,14 +63,12 @@ const ReviewScreen = ({ navigation, route }) => {
   
   // Format date for display
   const formatDate = (date) => {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('default', { month: 'long' });
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString(undefined, options);
   };
   
-  // Publish button animation
-  const animatePublish = () => {
+  // Publish animation and navigation
+  const publishReview = () => {
     Animated.sequence([
       Animated.timing(publishScale, {
         toValue: 0.95,
@@ -89,22 +81,19 @@ const ReviewScreen = ({ navigation, route }) => {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // Create the new review object
       const newReview = {
-        _id: Date.now().toString(), // Generate a unique ID for the review
-        user: 'John Doe', // Replace with dynamic user data if available
+        id: Date.now().toString(),
+        user: 'John Doe',
         review,
         rating,
         isFavorite,
         date: formatDate(date),
       };
-
-      // Pass the new review to ForumScreen
       navigation.navigate('Forum', { newReview });
     });
   };
   
-  // Render stars based on rating
+  // Render stars with current rating
   const renderStars = () => {
     const stars = [];
     
@@ -137,96 +126,118 @@ const ReviewScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Review Page</Text>
-      </View>
-      
-      {/* Review Form */}
-      <View style={styles.content}>
-        {/* Back Button and Title */}
-        <View style={styles.titleRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={26} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.pageTitle}>Write Your Review</Text>
-        </View>
-        
-        {/* Album Info */}
-        <View style={styles.albumSection}>
-          <View style={styles.albumInfo}>
-            <Text style={styles.albumTitle}>After Hours <Text style={styles.albumYear}>2020</Text></Text>
-            
-            {/* Date Selection */}
-            <View style={styles.dateSection}>
-              <Text style={styles.dateLabel}>Specify the date you watched it</Text>
-              <TouchableOpacity style={styles.dateButton} onPress={showDatePicker}>
-                <MaterialIcons name="date-range" size={20} color="#fff" style={styles.dateIcon} />
-                <Text style={styles.dateText}>{formatDate(date)}</Text>
-                <TouchableOpacity style={styles.changeButton} onPress={showDatePicker}>
-                  <Text style={styles.changeButtonText}>Change</Text>
-                </TouchableOpacity>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoid}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header with background image and gradient overlay */}
+          <View style={styles.header}>
+            <Image 
+              source={{ uri: ALBUM_COVER }} 
+              style={styles.headerBackground}
+              blurRadius={Platform.OS === 'ios' ? 10 : 5}
+            />
+            <LinearGradient
+              colors={['rgba(18, 18, 18, 0.5)', 'rgba(18, 18, 18, 0.9)', '#121212']}
+              style={styles.headerGradient}
+            >
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
               </TouchableOpacity>
-            </View>
+              
+              <Text style={styles.pageTitle}>Write A Review</Text>
+            </LinearGradient>
+          </View>
+          
+          {/* Album Info Section */}
+          <View style={styles.albumInfoSection}>
+            <Image source={{ uri: ALBUM_COVER }} style={styles.albumCover} />
             
-            {/* Rating Section */}
-            <View style={styles.ratingSection}>
-              <Text style={styles.ratingLabel}>Give your rating</Text>
-              <View style={styles.ratingContainer}>
-                <View style={styles.starsContainer}>
-                  {renderStars()}
-                </View>
-                <TouchableOpacity 
-                  style={styles.heartButton}
-                  onPress={toggleFavorite}
-                >
-                  <Ionicons 
-                    name={isFavorite ? "heart" : "heart-outline"} 
-                    size={32} 
-                    color={isFavorite ? "#FF6B6B" : "#fff"} 
-                  />
-                </TouchableOpacity>
-              </View>
+            <View style={styles.albumInfo}>
+              <Text style={styles.albumTitle}>After Hours</Text>
+              <Text style={styles.artistName}>The Weeknd</Text>
+              <Text style={styles.albumYear}>2020 • 14 tracks</Text>
             </View>
           </View>
           
-          {/* Album Cover */}
-          <Image 
-            source={{ uri: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-KVAKyY2Q5Ua0Kzhc2yaoslK44qxpYh.png' }} 
-            style={styles.albumCover}
-          />
-        </View>
-        
-        {/* Review Text Input */}
-        <View style={styles.reviewInputContainer}>
-          <TextInput
-            style={styles.reviewInput}
-            placeholder="Write down your review..."
-            placeholderTextColor="#8C8C9E"
-            multiline
-            textAlignVertical="top"
-            value={review}
-            onChangeText={setReview}
-          />
-        </View>
-        
-        {/* Publish Button */}
-        <View style={styles.publishContainer}>
-          <Animated.View style={{ transform: [{ scale: publishScale }] }}>
+          {/* Rating Section */}
+          <View style={styles.ratingSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Your Rating</Text>
+              <Text style={styles.ratingNumber}>{rating.toFixed(1)}/5.0</Text>
+            </View>
+            
+            <View style={styles.starsRow}>
+              {renderStars()}
+            </View>
+            
             <TouchableOpacity 
-              style={styles.publishButton}
-              onPress={animatePublish}
-              activeOpacity={0.8}
+              style={[styles.favoriteButton, isFavorite ? styles.favoritedButton : {}]}
+              onPress={toggleFavorite}
             >
-              <Text style={styles.publishButtonText}>Publish</Text>
+              <Ionicons 
+                name={isFavorite ? "heart" : "heart-outline"} 
+                size={20} 
+                color={isFavorite ? "#fff" : "#fff"} 
+              />
+              <Text style={styles.favoriteText}>
+                {isFavorite ? "Added to Favorites" : "Add to Favorites"}
+              </Text>
             </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </View>
+          </View>
+          
+          {/* Watch Date Section */}
+          <View style={styles.dateSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Listen Date</Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.dateSelector}
+              onPress={showDatePicker}
+            >
+              <MaterialIcons name="calendar-today" size={20} color="#fff" />
+              <Text style={styles.dateText}>{formatDate(date)}</Text>
+              <Text style={styles.changeDateText}>Change</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Review Text Section */}
+          <View style={styles.reviewSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Your Review</Text>
+            </View>
+            
+            <TextInput
+              style={styles.reviewInput}
+              placeholder="Share your thoughts about this album..."
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              multiline
+              textAlignVertical="top"
+              value={review}
+              onChangeText={setReview}
+            />
+            
+            <View style={styles.publishButtonContainer}>
+              <Animated.View style={{ transform: [{ scale: publishScale }] }}>
+                <TouchableOpacity 
+                  style={styles.publishButton}
+                  onPress={publishReview}
+                >
+                  <Text style={styles.publishText}>Publish Review</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       
       {/* Date Picker Modal */}
       <DateTimePickerModal
@@ -236,167 +247,189 @@ const ReviewScreen = ({ navigation, route }) => {
         onCancel={hideDatePicker}
         date={date}
         maximumDate={new Date()}
+        themeVariant="dark"
       />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E2130',
+    backgroundColor: '#121212',
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    height: 220,
+    position: 'relative',
   },
-  headerTitle: {
-    color: '#9A9A9A',
-    fontSize: 20,
-    fontWeight: '500',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+  headerBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
-  content: {
-    flex: 1,
+  headerGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: 50,
     paddingHorizontal: 20,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
   backButton: {
-    marginRight: 16,
-    padding: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pageTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '600',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-  albumSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  albumInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  albumTitle: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
     color: '#FFFFFF',
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 16,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    letterSpacing: 0.5,
   },
-  albumYear: {
-    fontSize: 20,
-    color: '#9A9A9A',
-    fontWeight: 'normal',
-  },
-  dateSection: {
-    marginBottom: 20,
-  },
-  dateLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginBottom: 8,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-  dateButton: {
+  albumInfoSection: {
     flexDirection: 'row',
+    padding: 20,
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  dateIcon: {
-    marginRight: 8,
-  },
-  dateText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    flex: 1,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-  changeButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  changeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-  ratingSection: {
-    marginTop: 8,
-  },
-  ratingLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginBottom: 8,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  starsContainer: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  starContainer: {
-    padding: 4,
-    marginRight: 4,
-  },
-  heartButton: {
-    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   albumCover: {
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
     borderRadius: 8,
   },
-  reviewInputContainer: {
+  albumInfo: {
+    marginLeft: 15,
     flex: 1,
+  },
+  albumTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  artistName: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginBottom: 4,
+    opacity: 0.8,
+  },
+  albumYear: {
+    color: '#CCCCCC',
+    fontSize: 14,
+  },
+  ratingSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  ratingNumber: {
+    color: '#FFD700',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  starContainer: {
+    padding: 5,
+  },
+  favoriteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  favoritedButton: {
+    backgroundColor: 'rgba(255, 107, 107, 0.2)',
+  },
+  favoriteText: {
+    color: '#FFFFFF',
+    marginLeft: 8,
+    fontSize: 15,
+  },
+  dateSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  dateSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 8,
+    padding: 14,
+  },
+  dateText: {
+    flex: 1,
+    color: '#FFFFFF',
+    marginLeft: 10,
+    fontSize: 16,
+  },
+  changeDateText: {
+    color: '#5E81AC',
+    fontSize: 14,
+  },
+  reviewSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   reviewInput: {
-    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 8,
+    padding: 15,
     color: '#FFFFFF',
-    fontSize: 18,
-    padding: 16,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    fontSize: 16,
+    minHeight: 150,
+    textAlignVertical: 'top',
   },
-  publishContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 24,
+  publishButtonContainer: {
+    alignItems: 'center',
+    marginTop: 20,
   },
   publishButton: {
-    backgroundColor: '#6B7280',
+    backgroundColor: '#5E81AC',
+    paddingHorizontal: 40,
     paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 24,
-    elevation: 4,
+    borderRadius: 30,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
-  publishButtonText: {
+  publishText: {
     color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
-
-export default ReviewScreen;

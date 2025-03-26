@@ -7,6 +7,7 @@ import TabNavigator from './TabNavigator';
 import AlbumScreen from '../screens/Community/AlbumScreen';
 import ReviewScreen from '../screens/Community/ReviewScreen';
 import ForumScreen from '../screens/Community/ForumScreen';
+import DNACodeScreen from '../screens/DNA/DNACodeScreen';
 
 export type RootStackParamList = {
   SignIn: undefined;
@@ -16,6 +17,7 @@ export type RootStackParamList = {
   Album: undefined;
   Review: undefined;
   Forum: { newReview?: any };
+  DNACode: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -33,6 +35,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Album" component={AlbumScreen} />
       <Stack.Screen name="Review" component={ReviewScreen} />
       <Stack.Screen name="Forum" component={ForumScreen} />
+      <Stack.Screen name="DNACode" component={DNACodeScreen} />
     </Stack.Navigator>
   );
 }

@@ -18,6 +18,7 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
 import type { TabParamList } from '../../navigation/TabNavigator';
+import { fetchCurrentUser } from '../../services/userService';
 
 interface Track {
   id: string;
@@ -40,26 +41,44 @@ export default function HomeScreen({ toggleSidebar }: HomeScreenProps) {
   const [topTracks, setTopTracks] = useState<Track[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(true);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch user profile and Spotify data
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
+        // Try to fetch user profile from your API
+        const userData = await fetchCurrentUser();
+        if (userData) {
+          setUserProfile(userData);
+          setUserName(userData.displayName);
+        }
+        
+        // Check Spotify connection
         const spotifyToken = await AsyncStorage.getItem('spotify_token');
         if (!spotifyToken) {
           setIsSpotifyConnected(false);
           setLoadingTracks(false);
+          setLoading(false);
           return;
         }
+
         setIsSpotifyConnected(true);
         
-        // Verify token validity and fetch user info and top tracks
+        // Fetch user data from Spotify
         try {
-          const userResponse = await axios.get('https://api.spotify.com/v1/me', {
-            headers: { Authorization: `Bearer ${spotifyToken}` },
-          });
-          setUserName(userResponse.data.display_name);
+          // Only fetch from Spotify if we don't have user data
+          if (!userData || !userData.displayName) {
+            const userResponse = await axios.get('https://api.spotify.com/v1/me', {
+              headers: { Authorization: `Bearer ${spotifyToken}` },
+            });
+            setUserName(userResponse.data.display_name);
+          }
           
+          // Fetch top tracks from Spotify
           const tracksResponse = await axios.get(
             'https://api.spotify.com/v1/me/top/tracks?limit=50',
             { headers: { Authorization: `Bearer ${spotifyToken}` } }
@@ -78,6 +97,7 @@ export default function HomeScreen({ toggleSidebar }: HomeScreenProps) {
         console.error('Network error:', networkError);
       } finally {
         setLoadingTracks(false);
+        setLoading(false);
       }
     };
     
@@ -102,6 +122,17 @@ export default function HomeScreen({ toggleSidebar }: HomeScreenProps) {
     navigation.navigate('DNACode');
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFD700" />
+          <Text style={styles.loadingText}>Loading your music profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -109,28 +140,42 @@ export default function HomeScreen({ toggleSidebar }: HomeScreenProps) {
           <TouchableOpacity onPress={toggleSidebar}>
             <Ionicons name="menu" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.greeting}>Hello, {userName || 'User'}!</Text>
-          <TouchableOpacity>
-            <Image source={{ uri: 'https://via.placeholder.com/40' }} style={styles.profileImage} />
+          <Text style={styles.greeting}>Hello, {userName || 'Music Lover'}!</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <Image 
+              source={{ 
+                uri: userProfile?.profileImage || 'https://via.placeholder.com/40'
+              }} 
+              style={styles.profileImage} 
+            />
           </TouchableOpacity>
         </View>
-        {/* New DNA Code Button */}
+        
+        {/* DNA Code Button */}
         <TouchableOpacity 
           style={styles.dnaButton}
           onPress={navigateToDNACode}
         >
           <Text style={styles.dnaButtonText}>See Your DNA Code</Text>
         </TouchableOpacity>
+        
         <Text style={styles.sectionTitle}>Most Listened Tracks</Text>
+        
         {loadingTracks ? (
           <ActivityIndicator size="small" color="#fff" />
-        ) : (
+        ) : topTracks.length > 0 ? (
           <FlatList
             data={topTracks}
             renderItem={renderTrackItem}
             keyExtractor={item => item.id}
             showsVerticalScrollIndicator={false}
           />
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              No tracks found. Start listening to music on Spotify to see your most played tracks!
+            </Text>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -213,5 +258,28 @@ const styles = StyleSheet.create({
   },
   moreIcon: {
     marginLeft: 'auto',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+  },
+  loadingText: {
+    marginTop: 15,
+    color: '#FFD700',
+    fontSize: 16,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyStateText: {
+    color: '#8E8E93',
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });

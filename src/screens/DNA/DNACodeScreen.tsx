@@ -74,7 +74,7 @@ export default function DNACodeScreen() {
   }, [fetchTopTracksAndGenerateCode]);
 
   const navigateToHome = () => {
-    navigation.navigate('Main');
+    navigation.navigate('Tab');
   };
 
   if (loading) {

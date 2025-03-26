@@ -104,7 +104,7 @@ export default function TabNavigator() {
         component={withSidebar(ProfileScreen)} 
         options={{ tabBarLabel: 'Profile' }} 
       />
-      <Tab.Screen 
+      {/* <Tab.Screen 
         name="DNACode" 
         component={DNACodeScreen}
         options={{ 
@@ -113,7 +113,7 @@ export default function TabNavigator() {
             <MaterialCommunityIcons name="dna" size={size} color={color} />
           )
         }} 
-      />
+      /> */}
     </Tab.Navigator>
   );
 }
