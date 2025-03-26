@@ -9,6 +9,7 @@ import ReccoScreen from '../screens/Recommendations/ReccoScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import SearchScreen from '../screens/Search/SearchScreen';
 import SidebarLayout from '../components/SidebarLayout';
+import RecommendationSystemsScreen from '../screens/Recommendations/RecommendationSystemsScreen';
 
 export type TabParamList = {
   Home: undefined;
@@ -96,7 +97,7 @@ export default function TabNavigator() {
       />
       <Tab.Screen 
         name="Recommendations" 
-        component={withSidebar(ReccoScreen)} 
+        component={withSidebar(RecommendationSystemsScreen)} 
         options={{ tabBarLabel: 'For You' }} 
       />
       <Tab.Screen 

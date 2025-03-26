@@ -8,6 +8,8 @@ import AlbumScreen from '../screens/Community/AlbumScreen';
 import ReviewScreen from '../screens/Community/ReviewScreen';
 import ForumScreen from '../screens/Community/ForumScreen';
 import DNACodeScreen from '../screens/DNA/DNACodeScreen';
+import MoodChatbotScreen from '../screens/Recommendations/MoodChatbotScreen';
+import ReccoScreen from '../screens/Recommendations/ReccoScreen';
 
 export type RootStackParamList = {
   SignIn: undefined;
@@ -18,6 +20,8 @@ export type RootStackParamList = {
   Review: undefined;
   Forum: { newReview?: any };
   DNACode: undefined;
+  MoodChatbot: undefined;
+  ReccoScreen: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -36,6 +40,8 @@ export default function AppNavigator() {
       <Stack.Screen name="Review" component={ReviewScreen} />
       <Stack.Screen name="Forum" component={ForumScreen} />
       <Stack.Screen name="DNACode" component={DNACodeScreen} />
+      <Stack.Screen name="MoodChatbot" component={MoodChatbotScreen} />
+      <Stack.Screen name="ReccoScreen" component={ReccoScreen} />
     </Stack.Navigator>
   );
 }

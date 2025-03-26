@@ -194,7 +194,7 @@ const SearchScreen = ({ toggleSidebar }: SearchScreenProps) => {
 
         {/* Greeting Section */}
         <View style={styles.greetingSection}>
-          <Text style={styles.greeting}>Hey, Leena!</Text>
+          <Text style={styles.greeting}>Hey, Vishnu Adithya!</Text>
           <Text style={styles.subGreeting}>
             Search for the albums you've already heard, or want to hear...
           </Text>

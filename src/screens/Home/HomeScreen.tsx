@@ -93,7 +93,7 @@ export default function HomeScreen({ toggleSidebar }: HomeScreenProps) {
           {item.artists.map(artist => artist.name).join(', ')}
         </Text>
       </View>
-      <Text style={styles.trackDuration}>5:33</Text>
+
       <Ionicons name="ellipsis-vertical" size={20} color="#fff" style={styles.moreIcon} />
     </View>
   );

@@ -44,7 +44,7 @@ export default function MainPage() {
           <Feather name="menu" size={24} color="#8E8E93" />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.greeting}>Hello, Leena!</Text>
+          <Text style={styles.greeting}>Hello, Vishnu Adithya!</Text>
           <TouchableOpacity>
             <Feather name="search" size={20} color="#8E8E93" />
           </TouchableOpacity>

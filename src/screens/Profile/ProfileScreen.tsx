@@ -92,7 +92,7 @@ export default function ProfileScreen() {
         {/* User Info */}
         <View style={styles.userInfoContainer}>
           <View style={styles.nameContainer}>
-            <Text style={styles.username}>Leena</Text>
+            <Text style={styles.username}>Vishnu Adithya</Text>
             <View style={styles.proBadge}>
               <Text style={styles.proBadgeText}>PRO</Text>
             </View>
@@ -104,13 +104,13 @@ export default function ProfileScreen() {
         </View>
 
         {renderStats()}
-        {renderAlbumRow(favoriteAlbums, "Leena's Favorite Albums")}
-        {renderAlbumRow(recentListens, "Leena's Recent Listens")}
+        {renderAlbumRow(favoriteAlbums, "Vishnu Adithya's Favorite Albums")}
+        {renderAlbumRow(recentListens, "Vishnu Adithya's Recent Listens")}
 
         {/* Recent Reviews Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Leena's Recent Reviews</Text>
+            <Text style={styles.sectionTitle}>Vishnu Adithya's Recent Reviews</Text>
             <TouchableOpacity>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
@@ -122,7 +122,7 @@ export default function ProfileScreen() {
                 source={{ uri: 'https://img.freepik.com/free-photo/woman-with-trendy-hairstyle-side-view_23-2149883724.jpg' }}
                 style={styles.reviewerPic}
               />
-              <Text style={styles.reviewByText}>Review by Leena ★★★★★ (215)</Text>
+              <Text style={styles.reviewByText}>Review by Vishnu Adithya ★★★★★ (215)</Text>
             </View>
             <View style={styles.reviewContent}>
               <View style={styles.reviewTextContainer}>

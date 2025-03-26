@@ -18,7 +18,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 const { width } = Dimensions.get('window');
 
 interface SidebarProps {
-  isVisible: boolean;
+  isVisible: boolean; 
   onClose: () => void;
   slideAnim: Animated.Value;
 }
@@ -26,20 +26,26 @@ interface SidebarProps {
 export default function Sidebar({ isVisible, onClose, slideAnim }: SidebarProps) {
   const navigation = useNavigation();
 
-  const navigateToScreen = (screenName: string) => {
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          { 
-            name: 'Tab',
-            state: {
-              routes: [{ name: screenName }]
+  const navigateToScreen = (screenName: string, isStackScreen: boolean = false) => {
+    if (isStackScreen) {
+      // Direct navigation for stack screens
+      navigation.navigate(screenName);
+    } else {
+      // Tab navigation reset
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            { 
+              name: 'Tab',
+              state: {
+                routes: [{ name: screenName }]
+              }
             }
-          }
-        ],
-      })
-    );
+          ],
+        })
+      );
+    }
     onClose();
   };
 
@@ -63,6 +69,11 @@ export default function Sidebar({ isVisible, onClose, slideAnim }: SidebarProps)
       icon: 'compass-outline',
       label: 'For You',
       onPress: () => navigateToScreen('Recommendations'),
+    },
+    {
+      icon: 'chat-outline',
+      label: 'Mood Chatbot',
+      onPress: () => navigateToScreen('MoodChatbot', true), // Note the true flag for stack navigation
     },
   ];
 
