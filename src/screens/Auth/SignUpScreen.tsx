@@ -43,7 +43,7 @@ export default function SignUpScreen() {
       </View>
 
       <View style={styles.formContainer}>
-        <Image source={require('../../../assets/icon.png')} style={styles.logo} />
+        <Image source={require('../../../assets/icon.jpg')} style={styles.logo} />
         <Text style={styles.title}>Harmony</Text>
         <Text style={styles.subtitle}>Sign Up</Text>
         <Text style={styles.description}>Create an account to get started.</Text>

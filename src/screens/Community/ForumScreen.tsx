@@ -115,7 +115,7 @@ const ForumScreen = () => {
         {/* Album Info Section */}
         <View style={styles.albumInfoSection}>
           <Image 
-            source={{ uri: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9yQBX9pKJvyzF2V7aFQjhYGv2AGKwW.png' }} 
+            source={{ uri: 'https://i.scdn.co/image/ab67616d0000b273ef017e899c0547766997d874' }} 
             style={styles.albumCover}
           />
 

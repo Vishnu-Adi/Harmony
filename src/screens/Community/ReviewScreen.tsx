@@ -17,7 +17,7 @@ import { Ionicons, FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const ALBUM_COVER = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-DW226otLXNn5BunBBolecrbwShg72C.png';
+const ALBUM_COVER = 'https://preview.redd.it/fzoi9fxkxw691.png?width=640&crop=smart&auto=webp&s=0851573305f8867a34aa1fd456967262b3912467';
 
 export default function ReviewScreen({ navigation }) {
   // State management

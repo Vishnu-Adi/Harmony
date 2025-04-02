@@ -24,12 +24,12 @@ function generateDNACode(tracks: { name: string; artists: { name: string }[]; po
     )
     .join('|');
 
-  // Use a polynomial rolling hash (similar to djb2 but modified)
+
   let hash = 5381;
   for (let i = 0; i < combinedData.length; i++) {
     hash = (hash * 33) ^ combinedData.charCodeAt(i);
   }
-  // Convert hash to unsigned 32-bit and then to hexadecimal.
+
   const hexCode = (hash >>> 0).toString(16).padStart(8, '0').toUpperCase();
   return hexCode;
 }

@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
-const ALBUM_COVER = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-DW226otLXNn5BunBBolecrbwShg72C.png';
+const ALBUM_COVER = 'https://i.scdn.co/image/ab67616d0000b273ef017e899c0547766997d874';
 
 const AlbumScreen = () => {
   const navigation = useNavigation();
